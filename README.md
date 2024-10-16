@@ -3,7 +3,7 @@
 # Todo
 
 - [ ] make transcription feature use Whisper API
-- [ ] Integrate Llama 3.2 3b for tagging call recordings (and translate?)
+- [ ] Integrate Llama 3.2 3b for tagging call recordings (and transcribe?)
 - [ ] Report page with filtering and data visualization (via tags + date)
     - [ ] Charts
     - [ ] Tables

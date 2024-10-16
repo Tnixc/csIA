@@ -6,7 +6,7 @@ import speech_recognition as sr
 import soundfile
 from .forms import UploadFileForm
 
-translate = Blueprint('translate', __name__)
+transcribe = Blueprint('transcribe', __name__)
 
 def stt_Cantonese(audio_file):
     data, samplerate = soundfile.read(audio_file)
@@ -23,9 +23,9 @@ def stt_Cantonese(audio_file):
         return None
 
 
-@translate.route("/home/translate", methods=['GET', 'POST'])
+@transcribe.route("/home/transcribe", methods=['GET', 'POST'])
 @login_required
-def translate_audio():
+def transcribe_audio():
     form = UploadFileForm()
     if form.validate_on_submit():
         file = form.file.data
@@ -33,4 +33,4 @@ def translate_audio():
             os.path.join(os.path.abspath(os.path.dirname(__file__)),
                          'static/files', secure_filename("audio_file.wav")))
 
-    return render_template("translate.html", form=form)
+    return render_template("transcribe.html", form=form)

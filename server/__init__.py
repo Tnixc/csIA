@@ -32,8 +32,8 @@ def create_app():
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    from .translate import translate as translate_blueprint
-    app.register_blueprint(translate_blueprint)
+    from .transcribe import transcribe as transcribe_blueprint
+    app.register_blueprint(transcribe_blueprint)
 
     with app.app_context():
         db.create_all()
