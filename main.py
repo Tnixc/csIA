@@ -11,15 +11,16 @@ from wtforms.validators import InputRequired
 import speech_recognition as sr
 import soundfile
 from datetime import datetime
+from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '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'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 app.config['UPLOAD_FOLDER'] = 'static/files'
 
 db = SQLAlchemy(app)
 
-GOOGLE_CLIENT_ID = "888946891767-ddsprhbd0kgmt0l95bbfhheir6b1r33h.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 
 class CallDatabase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
