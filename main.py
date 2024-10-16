@@ -1,8 +1,6 @@
-from flask import Flask, session, abort, redirect, request, render_template
+from flask import Flask, session, abort, redirect, request, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import requests
 from google.oauth2 import id_token
-from google_auth_oauthlib.flow import Flow
 from google.auth.transport import requests as google_auth_requests
 import os
 import pathlib
@@ -15,21 +13,13 @@ import soundfile
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = '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'  # Replace with a secure secret key
+app.config['SECRET_KEY'] = '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'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 app.config['UPLOAD_FOLDER'] = 'static/files'
 
 db = SQLAlchemy(app)
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # To allow HTTP traffic for local dev
 GOOGLE_CLIENT_ID = "888946891767-ddsprhbd0kgmt0l95bbfhheir6b1r33h.apps.googleusercontent.com"
-client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
-
-flow = Flow.from_client_secrets_file(
-    client_secrets_file=client_secrets_file,
-    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="http://localhost/callback"
-)
 
 class CallDatabase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -45,37 +35,30 @@ class UploadFileForm(FlaskForm):
 def login_is_required(function):
     def wrapper(*args, **kwargs):
         if "google_id" not in session:
-            return abort(401)  
+            return redirect("/login")
         else:
             return function(*args, **kwargs)
     wrapper.__name__ = function.__name__
     return wrapper
 
-@app.route("/login")
+@app.route("/login", methods=['GET', 'POST'])
 def login():
-    authorization_url, state = flow.authorization_url()
-    session["state"] = state
-    return redirect(authorization_url)
+    if request.method == 'GET':
+        return render_template("login.html")
+    elif request.method == 'POST':
+        try:
+            token = request.json.get('credential')
+            if not token:
+                return jsonify({"success": False, "message": "No credential provided"}), 400
 
-@app.route("/callback")
-def callback():
-    flow.fetch_token(authorization_response=request.url)
-
-    if not session.get("state") == request.args.get("state"):
-        abort(500)  # State does not match!
-
-    credentials = flow.credentials
-    token_request = google_auth_requests.Request()
-
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials.id_token,
-        request=token_request,
-        audience=GOOGLE_CLIENT_ID
-    )
-
-    session["google_id"] = id_info.get("sub")
-    session["name"] = id_info.get("name")
-    return redirect("/home")
+            idinfo = id_token.verify_oauth2_token(token, google_auth_requests.Request(), GOOGLE_CLIENT_ID)
+            session["google_id"] = idinfo['sub']
+            session["name"] = idinfo['name']
+            return jsonify({"success": True})
+        except ValueError as e:
+            return jsonify({"success": False, "message": str(e)}), 401
+        except Exception as e:
+            return jsonify({"success": False, "message": "An error occurred"}), 500
 
 @app.route("/logout")
 def logout():
@@ -83,8 +66,10 @@ def logout():
     return redirect("/")
 
 @app.route("/")
-def loginpage():
-    return "Hello World <a href='/login'><button>Login</button></a>"
+def index():
+    if "google_id" in session:
+        return redirect("/home")
+    return render_template("login.html")
 
 @app.route("/home")
 @login_is_required
@@ -108,7 +93,7 @@ def stt_Cantonese(audio_file):
     with sr.AudioFile(audio_file) as source:
         audio = r.record(source)
     try:
-        text = r.recognize_google(audio, language="yue-HK") 
+        text = r.recognize_google(audio, language="yue-HK")
         return text
     except sr.UnknownValueError:
         return None
@@ -122,7 +107,7 @@ def translate():
     if form.validate_on_submit():
         file = form.file.data
         file.save(os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'], secure_filename("audio_file.wav")))
-        
+
     return render_template("translate.html", form=form)
 
 if __name__ == '__main__':
