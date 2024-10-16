@@ -9,6 +9,7 @@ auth = Blueprint('auth', __name__)
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 
+
 @auth.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -17,13 +18,19 @@ def login():
         try:
             token = request.json.get('credential')
             if not token:
-                return jsonify({"success": False, "message": "No credential provided"}), 400
+                return jsonify({
+                    "success": False,
+                    "message": "No credential provided"
+                }), 400
 
-            idinfo = id_token.verify_oauth2_token(token, google_auth_requests.Request(), GOOGLE_CLIENT_ID)
+            idinfo = id_token.verify_oauth2_token(
+                token, google_auth_requests.Request(), GOOGLE_CLIENT_ID)
 
             user = User.query.filter_by(id=idinfo['sub']).first()
             if not user:
-                user = User(id=idinfo['sub'], name=idinfo['name'], email=idinfo['email'])
+                user = User(id=idinfo['sub'],
+                            name=idinfo['name'],
+                            email=idinfo['email'])
                 db.session.add(user)
                 db.session.commit()
 
@@ -32,7 +39,11 @@ def login():
         except ValueError as e:
             return jsonify({"success": False, "message": str(e)}), 401
         except Exception as e:
-            return jsonify({"success": False, "message": "An error occurred"}), 500
+            return jsonify({
+                "success": False,
+                "message": "An error occurred"
+            }), 500
+
 
 @auth.route("/logout")
 @login_required

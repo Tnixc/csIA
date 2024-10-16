@@ -8,6 +8,7 @@ from .forms import UploadFileForm
 
 translate = Blueprint('translate', __name__)
 
+
 def stt_Cantonese(audio_file):
     data, samplerate = soundfile.read(audio_file)
     soundfile.write(audio_file, data, samplerate, subtype='PCM_16')
@@ -22,12 +23,15 @@ def stt_Cantonese(audio_file):
     except sr.RequestError as e:
         return None
 
+
 @translate.route("/home/translate", methods=['GET', 'POST'])
 @login_required
 def translate_audio():
     form = UploadFileForm()
     if form.validate_on_submit():
         file = form.file.data
-        file.save(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/files', secure_filename("audio_file.wav")))
+        file.save(
+            os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                         'static/files', secure_filename("audio_file.wav")))
 
     return render_template("translate.html", form=form)
