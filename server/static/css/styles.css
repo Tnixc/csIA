@@ -1,0 +1,59 @@
+.alert-error {
+    background-color: #ffdddd;
+    border-color: #f44336;
+}
+
+.alert-success {
+    background-color: #ddffdd;
+    border-color: #4CAF50;
+}
+
+.file-upload {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.file-upload h2 {
+    margin-bottom: 20px;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
+    display: none;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0.125rem 0 0;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, .15);
+    border-radius: 0.25rem;
+}
+
+.dropdown-menu li {
+    list-style-type: none;
+}
+
+.dropdown-menu a {
+    display: block;
+    padding: 0.25rem 1.5rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+}
+
+.dropdown-menu a:hover {
+    background-color: #f8f9fa;
+}

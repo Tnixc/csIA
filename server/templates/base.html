@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>{% block title %}Home{% endblock %}</title>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>CS IA</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/home">Home</a></li>
+            <li><a href="/home/report">Report</a></li>
+            <li><a href="/home/translate">Translate</a></li>
+            <li><a href="/home/manage">Manage</a></li>
+            <li x-data="{ open: false }" class="dropdown">
+                {% if current_user.is_authenticated %}
+                    <a @click="open = !open" href="#" role="button">
+                        Logged in as {{ current_user.name }}
+                        <span x-show="!open">▼</span>
+                        <span x-show="open">▲</span>
+                    </a>
+                    <ul x-show="open" @click.away="open = false" class="dropdown-menu">
+                        <li><a href="/logout">Logout</a></li>
+                    </ul>
+                {% else %}
+                    <a href="/login">Login</a>
+                {% endif %}
+            </li>        </ul>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <article class="{% if category == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                        {{ message }}
+                    </article>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
