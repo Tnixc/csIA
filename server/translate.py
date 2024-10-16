@@ -8,7 +8,6 @@ from .forms import UploadFileForm
 
 translate = Blueprint('translate', __name__)
 
-
 def stt_Cantonese(audio_file):
     data, samplerate = soundfile.read(audio_file)
     soundfile.write(audio_file, data, samplerate, subtype='PCM_16')
