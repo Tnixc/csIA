@@ -1,10 +1,10 @@
 from flask import Blueprint, render_template, flash, request, current_app
-from flask_login import login_required
+from flask_login import login_required, current_user
 import os
 from werkzeug.utils import secure_filename
 from .forms import UploadFileForm
+from .models import db, Transcription, TranscriptionSegment
 import requests
-import json
 
 transcribe = Blueprint('transcribe', __name__)
 
@@ -18,7 +18,7 @@ def format_time(seconds):
     return f"{minutes:02d}:{seconds:02d}"
 
 def transcribe_with_whisper(audio_file_path):
-    whisper_url = "http://localhost:9000/asr?encode=true&task=transcribe&word_timestamps=true&output=json"
+    whisper_url = "http://192.168.2.114:9000/asr?encode=true&task=transcribe&word_timestamps=true&output=json"
 
     with open(audio_file_path, "rb") as audio_file:
         files = {"audio_file": audio_file}
@@ -49,15 +49,33 @@ def transcribe_audio():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             upload_folder = os.path.join(current_app.root_path, 'static', 'files')
-
             os.makedirs(upload_folder, exist_ok=True)
-
             file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
 
             transcription = transcribe_with_whisper(file_path)
 
             if transcription:
+                # Store in database
+                new_transcription = Transcription(
+                    filename=filename,
+                    file_path=file_path,
+                    user_id=current_user.id
+                )
+                db.session.add(new_transcription)
+                db.session.flush()  # To get the id
+
+                for segment in transcription:
+                    start_time, end_time = segment["timestamp"].split(" - ")
+                    new_segment = TranscriptionSegment(
+                        start_time=start_time,
+                        end_time=end_time,
+                        text=segment["text"],
+                        transcription_id=new_transcription.id
+                    )
+                    db.session.add(new_segment)
+
+                db.session.commit()
                 flash('File successfully uploaded and transcribed.', 'success')
             else:
                 flash('Transcription failed.', 'error')
