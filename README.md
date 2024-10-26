@@ -9,8 +9,8 @@
   - [ ] Tables
 - [ ] Manage page for administrators
   - [ ] change roles of other users
-  - [ ] delete recordings
-  - [ ] Show full transcription of selected call + info
+  - [x] delete recordings
+  - [x] Show full transcription of selected call + info
 - [ ] user role-based access control (for 'manage')
 
 # run
@@ -21,6 +21,8 @@ This project uses [uv](https://github.com/astral-sh/uv). You will need to set up
 SECRET_KEY=GOCSPX-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 GOOGLE_CLIENT_ID=000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
 ```
+
+You will also have to change the url in `transcribe.py` to a docker container hosting a open-ai whisper service.
 
 Then run:
 

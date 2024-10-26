@@ -5,10 +5,10 @@
   {% if transcriptions %}
   <div class="flex flex-col">
     {% for trans in transcriptions %}
-    <article class="mb-4">
+    <article class="mb-4 overflow-sroll max-w-fit">
       <header>
-        <div class="flex justify-between items-center">
-          <h3>{{ trans.filename }}</h3>
+        <div class="flex justify-between items-center ">
+          <h3 class="w-3/4">{{ trans.filename }}</h3>
           <div class="flex gap-3">
             <a
               href="{{ url_for('main.view_record', id=trans.id) }}"
