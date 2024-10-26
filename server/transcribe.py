@@ -42,44 +42,53 @@ def transcribe_with_whisper(audio_file_path):
 @login_required
 def transcribe_audio():
     form = UploadFileForm()
-    transcription = None
+    transcriptions = []
+    success_count = 0
 
     if form.validate_on_submit():
-        file = form.file.data
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            upload_folder = os.path.join(current_app.root_path, 'static', 'files')
-            os.makedirs(upload_folder, exist_ok=True)
-            file_path = os.path.join(upload_folder, filename)
-            file.save(file_path)
+        files = request.files.getlist('files')
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                upload_folder = os.path.join(current_app.root_path, 'static', 'files')
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
 
-            transcription = transcribe_with_whisper(file_path)
+                transcription = transcribe_with_whisper(file_path)
 
-            if transcription:
-                # Store in database
-                new_transcription = Transcription(
-                    filename=filename,
-                    file_path=file_path,
-                    user_id=current_user.id
-                )
-                db.session.add(new_transcription)
-                db.session.flush()  # To get the id
-
-                for segment in transcription:
-                    start_time, end_time = segment["timestamp"].split(" - ")
-                    new_segment = TranscriptionSegment(
-                        start_time=start_time,
-                        end_time=end_time,
-                        text=segment["text"],
-                        transcription_id=new_transcription.id
+                if transcription:
+                    # Store in database
+                    new_transcription = Transcription(
+                        filename=filename,
+                        file_path=file_path,
+                        user_id=current_user.id
                     )
-                    db.session.add(new_segment)
+                    db.session.add(new_transcription)
+                    db.session.flush()
 
-                db.session.commit()
-                flash('File successfully uploaded and transcribed.', 'success')
+                    for segment in transcription:
+                        start_time, end_time = segment["timestamp"].split(" - ")
+                        new_segment = TranscriptionSegment(
+                            start_time=start_time,
+                            end_time=end_time,
+                            text=segment["text"],
+                            transcription_id=new_transcription.id
+                        )
+                        db.session.add(new_segment)
+
+                    transcriptions.append({
+                        'filename': filename,
+                        'segments': transcription
+                    })
+                    success_count += 1
+                else:
+                    flash(f'Transcription failed for {filename}', 'error')
             else:
-                flash('Transcription failed.', 'error')
-        else:
-            flash('Invalid file type. Allowed types are: wav, mp3, ogg, flac', 'error')
+                flash(f'Invalid file type for {file.filename}. Allowed types are: {", ".join(ALLOWED_EXTENSIONS)}', 'error')
 
-    return render_template("transcribe.html", form=form, transcription=transcription)
+        if success_count > 0:
+            db.session.commit()
+            flash(f'Successfully uploaded and transcribed {success_count} file{"s" if success_count > 1 else ""}.', 'success')
+
+    return render_template("transcribe.html", form=form, transcriptions=transcriptions)

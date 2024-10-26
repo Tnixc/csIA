@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 from .forms import KeywordSearchForm
 from .models import Transcription, TranscriptionSegment
 from sqlalchemy import func
 import re
+import os
+from .models import db
 
 main = Blueprint('main', __name__)
 
@@ -72,7 +74,7 @@ def report():
         # Calculate percentage of files containing the keyword
         percentage = round((len(results) / total_files * 100) if total_files > 0 else 0)
         count = len(results)
-    
+
     return render_template(
         "report.html",
         form=form,
@@ -89,3 +91,47 @@ def report():
 @login_required
 def manage():
     return render_template("base.html")
+
+
+@main.route("/home/records")
+@login_required
+def records():
+    transcriptions = Transcription.query.filter_by(user_id=current_user.id).order_by(Transcription.upload_date.desc()).all()
+    return render_template("records.html", transcriptions=transcriptions)
+
+@main.route("/home/records/delete/<int:id>")
+@login_required
+def delete_record(id):
+    transcription = Transcription.query.get_or_404(id)
+    if transcription.user_id != current_user.id:
+        flash('Unauthorized action', 'error')
+        return redirect(url_for('main.records'))
+    
+    # Delete the file
+    try:
+        if os.path.exists(transcription.file_path):
+            os.remove(transcription.file_path)
+    except Exception as e:
+        flash(f'Warning: Could not delete file: {str(e)}', 'error')
+
+    # Delete from database
+    try:
+        db.session.delete(transcription)  # This will cascade delete segments
+        db.session.commit()
+        flash('Record deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting record: {str(e)}', 'error')
+    
+    return redirect(url_for('main.records'))
+
+@main.route("/home/records/view/<int:id>")
+@login_required
+def view_record(id):
+    transcription = Transcription.query.get_or_404(id)
+    if transcription.user_id != current_user.id:
+        flash('Unauthorized action', 'error')
+        return redirect(url_for('main.records'))
+
+    segments = transcription.segments
+    return render_template("view_record.html", transcription=transcription, segments=segments)
